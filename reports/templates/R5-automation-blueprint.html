@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>R5: Automation Blueprint — {{STORY_ID}}</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-primary: #090c14; --bg-secondary: #0f1520; --bg-card: #141a28; --bg-code: #0d1117;
+  --border: #1a2035; --accent: #00d4a8; --accent-glow: rgba(0,212,168,0.1);
+  --accent2: #4f8ef7; --text-primary: #e2e8f0; --text-secondary: #7a8ca8; --text-muted: #3d4f6b;
+  --critical: #ff4757; --high: #ff7c3a; --medium: #ffd32a; --low: #2ed573; --info: #4f8ef7;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--bg-primary); color: var(--text-primary); }
+code, .mono, pre { font-family: 'JetBrains Mono', monospace; }
+.layout { display: grid; grid-template-columns: 250px 1fr; min-height: 100vh; }
+.sidebar { background: var(--bg-secondary); border-right: 1px solid var(--border); padding: 24px 0; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+.main { padding: 32px; }
+.sidebar-logo { padding: 0 20px 24px; border-bottom: 1px solid var(--border); }
+.sidebar-logo .report-num { font-size: 28px; font-weight: 700; color: var(--accent); }
+.nav-link { display: flex; align-items: center; gap: 10px; padding: 8px 20px; font-size: 13px; color: var(--text-secondary); text-decoration: none; }
+.nav-link:hover { background: var(--bg-card); color: var(--text-primary); }
+.nav-link.active { background: var(--accent-glow); color: var(--accent); }
+.nav-section { padding: 16px 0; border-bottom: 1px solid var(--border); }
+.nav-section-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); padding: 0 20px 8px; }
+.report-title { font-size: 22px; font-weight: 700; }
+.report-subtitle { color: var(--text-secondary); font-size: 13px; margin-top: 4px; }
+.header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.story-pill { font-family: 'JetBrains Mono', monospace; font-size: 12px; background: var(--accent-glow); color: var(--accent); padding: 4px 12px; border-radius: 4px; border: 1px solid rgba(0,212,168,0.3); }
+.gen-time { font-size: 11px; color: var(--text-muted); }
+.report-header { margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+/* Summary */
+.summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 28px; }
+.sum-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 18px; }
+.sum-card .s-num { font-size: 30px; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: var(--accent); }
+.sum-card .s-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-top: 4px; }
+/* Section */
+.section { margin-bottom: 32px; }
+.section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+.section-title { font-size: 16px; font-weight: 600; }
+/* Backlog table */
+.table-wrap { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 20px; }
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th { background: var(--bg-secondary); padding: 10px 14px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); border-bottom: 1px solid var(--border); }
+.data-table td { padding: 11px 14px; border-bottom: 1px solid var(--border); font-size: 13px; }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: rgba(255,255,255,0.02); }
+.badge { display: inline-block; padding: 2px 9px; border-radius: 10px; font-size: 10px; font-weight: 700; text-transform: uppercase; font-family: 'JetBrains Mono', monospace; }
+.badge-api { background: rgba(79,142,247,0.12); color: #4f8ef7; }
+.badge-kafka { background: rgba(0,212,168,0.12); color: #00d4a8; }
+.badge-e2e { background: rgba(124,92,191,0.12); color: #a78bfa; }
+.badge-unit { background: rgba(46,213,115,0.12); color: #2ed573; }
+.badge-high-roi { background: rgba(0,212,168,0.12); color: #00d4a8; }
+.badge-med-roi { background: rgba(255,211,42,0.12); color: #ffd32a; }
+.tc-id { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--accent2); }
+/* Spec Cards */
+.spec-list { display: flex; flex-direction: column; gap: 20px; }
+.spec-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.spec-card-header { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: var(--bg-secondary); border-bottom: 1px solid var(--border); }
+.spec-card-title { font-weight: 600; font-size: 14px; }
+.spec-card-body { padding: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.spec-block { }
+.spec-block-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 8px; font-family: 'JetBrains Mono', monospace; }
+.code-block { background: var(--bg-code); border: 1px solid var(--border); border-radius: 6px; padding: 12px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #c9d1d9; overflow-x: auto; white-space: pre; line-height: 1.7; }
+.code-block .key { color: #79c0ff; }
+.code-block .val { color: #a5d6ff; }
+.code-block .str { color: #a8ff78; }
+.code-block .num { color: #ffa657; }
+.code-block .comment { color: #484f58; }
+.assertion-list { display: flex; flex-direction: column; gap: 6px; }
+.assertion { display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: var(--bg-secondary); border-radius: 4px; font-size: 12px; font-family: 'JetBrains Mono', monospace; }
+.assertion .a-type { color: var(--text-muted); font-size: 10px; min-width: 80px; }
+.assertion .a-path { color: var(--accent2); }
+.assertion .a-eq { color: var(--text-muted); }
+.assertion .a-val { color: var(--accent); }
+.kafka-topic { display: inline-block; background: rgba(0,212,168,0.08); border: 1px solid rgba(0,212,168,0.2); color: var(--accent); padding: 3px 10px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 12px; margin-bottom: 10px; }
+/* Full width spec body */
+.spec-card-body.full { grid-template-columns: 1fr; }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);">QA Intelligence</div>
+      <div class="report-num">R5</div>
+      <div style="font-size:12px;color:var(--text-secondary);">Automation Blueprint</div>
+    </div>
+    <nav>
+      <div class="nav-section">
+        <div class="nav-section-label">Reports</div>
+        <a href="R1-code-requirements-mapping.html" class="nav-link">📋 Code Map</a>
+        <a href="R2-requirements-test-mapping.html" class="nav-link">🔗 Req Trace</a>
+        <a href="R3-implementation-bug-findings.html" class="nav-link">🐛 Bug Findings</a>
+        <a href="R4-test-coverage-matrix.html" class="nav-link">🧪 Test Matrix</a>
+        <a href="R5-automation-blueprint.html" class="nav-link active">🤖 Automation</a>
+      </div>
+    </nav>
+  </aside>
+  <main class="main">
+    <div class="report-header">
+      <div class="header-top">
+        <span class="story-pill">{{STORY_ID}}</span>
+        <span class="gen-time">{{TIMESTAMP}} · QA Intelligence v2.0</span>
+      </div>
+      <div class="report-title">{{STORY_TITLE}}</div>
+      <div class="report-subtitle">R5 — Automation Blueprint & Technical Specifications</div>
+    </div>
+
+    <div class="summary-grid">
+      <div class="sum-card"><div class="s-num">{{AUTOMATE_TC}}</div><div class="s-label">Tests to Automate</div></div>
+      <div class="sum-card"><div class="s-num">{{API_TC}}</div><div class="s-label">API Tests</div></div>
+      <div class="sum-card"><div class="s-num">{{KAFKA_TC}}</div><div class="s-label">Kafka Tests</div></div>
+      <div class="sum-card"><div class="s-num">~{{EFFORT_HRS}}h</div><div class="s-label">Est. Effort</div></div>
+    </div>
+
+    <!-- Backlog -->
+    <div class="section">
+      <div class="section-header"><span>📋</span><span class="section-title">Automation Backlog — Prioritized</span></div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th>#</th><th>TC ID</th><th>Title</th><th>Type</th><th>ROI</th><th>Effort</th></tr></thead>
+          <tbody>
+            <tr>
+              <td style="color:var(--text-muted)">1</td>
+              <td class="tc-id">TC-{{STORY_ID}}-001</td>
+              <td>{{TC_TITLE}}</td>
+              <td><span class="badge badge-api">API</span></td>
+              <td><span class="badge badge-high-roi">High</span></td>
+              <td style="color:var(--text-secondary)">2h</td>
+            </tr>
+            <tr>
+              <td style="color:var(--text-muted)">2</td>
+              <td class="tc-id">TC-{{STORY_ID}}-022</td>
+              <td>{{TC_TITLE}}</td>
+              <td><span class="badge badge-kafka">Kafka</span></td>
+              <td><span class="badge badge-high-roi">High</span></td>
+              <td style="color:var(--text-secondary)">4h</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- API Specs -->
+    <div class="section">
+      <div class="section-header"><span>🔌</span><span class="section-title">API Test Specifications</span></div>
+      <div class="spec-list">
+
+        <!-- TEMPLATE API SPEC CARD — REPEAT PER TC -->
+        <div class="spec-card">
+          <div class="spec-card-header">
+            <span class="badge badge-api">API</span>
+            <span class="tc-id">TC-{{STORY_ID}}-001</span>
+            <span class="spec-card-title">{{TC_TITLE}}</span>
+          </div>
+          <div class="spec-card-body">
+            <div class="spec-block">
+              <div class="spec-block-label">Request</div>
+              <div class="code-block"><span class="key">method</span>: <span class="str">POST</span>
+<span class="key">path</span>:   <span class="str">/api/v1/orders</span>
+<span class="key">auth</span>:   <span class="str">Bearer ${JWT_TOKEN}</span>
+
+<span class="comment">// Request Body</span>
+{
+  <span class="key">"customerId"</span>: <span class="str">"{{testData.customerId}}"</span>,
+  <span class="key">"items"</span>: [
+    { <span class="key">"productId"</span>: <span class="str">"P001"</span>, <span class="key">"qty"</span>: <span class="num">2</span> }
+  ],
+  <span class="key">"price"</span>: <span class="num">150.00</span>
+}</div>
+            </div>
+            <div class="spec-block">
+              <div class="spec-block-label">Response Assertions</div>
+              <div class="assertion-list">
+                <div class="assertion"><span class="a-type">status</span><span class="a-eq">=</span><span class="a-val">201</span></div>
+                <div class="assertion"><span class="a-type">body</span><span class="a-path">$.orderId</span><span class="a-eq"> is </span><span class="a-val">not_null</span></div>
+                <div class="assertion"><span class="a-type">body</span><span class="a-path">$.status</span><span class="a-eq"> = </span><span class="a-val">"PENDING"</span></div>
+                <div class="assertion"><span class="a-type">body</span><span class="a-path">$.total</span><span class="a-eq"> = </span><span class="a-val">150.00</span></div>
+              </div>
+              <div style="margin-top:12px;">
+                <div class="spec-block-label">DB Verification</div>
+                <div class="code-block">SELECT * FROM orders
+WHERE customer_id = '{{testData.customerId}}'
+  AND status = 'PENDING'
+LIMIT 1;
+
+<span class="comment">// assert: 1 row returned
+// assert: total = 150.00</span></div>
+              </div>
+            </div>
+          </div>
+          <div style="padding: 0 16px 16px;">
+            <div class="spec-block-label">Kafka Verification</div>
+            <div class="kafka-topic">📨 order.created</div>
+            <div class="assertion-list">
+              <div class="assertion"><span class="a-type">timeout</span><span class="a-eq">≤</span><span class="a-val">10s</span></div>
+              <div class="assertion"><span class="a-type">message</span><span class="a-path">$.customerId</span><span class="a-eq"> = </span><span class="a-val">"{{testData.customerId}}"</span></div>
+              <div class="assertion"><span class="a-type">message</span><span class="a-path">$.total</span><span class="a-eq"> = </span><span class="a-val">150.00</span></div>
+              <div class="assertion"><span class="a-type">message</span><span class="a-path">$.orderId</span><span class="a-eq"> is </span><span class="a-val">not_null</span></div>
+            </div>
+          </div>
+        </div>
+        <!-- END API SPEC CARD -->
+
+      </div>
+    </div>
+
+    <!-- Kafka Consumer Specs -->
+    <div class="section">
+      <div class="section-header"><span>📨</span><span class="section-title">Kafka Consumer Test Specifications</span></div>
+      <div class="spec-list">
+        <div class="spec-card">
+          <div class="spec-card-header">
+            <span class="badge badge-kafka">Kafka</span>
+            <span class="tc-id">TC-{{STORY_ID}}-022</span>
+            <span class="spec-card-title">{{KAFKA_TC_TITLE}}</span>
+          </div>
+          <div class="spec-card-body full">
+            <div class="spec-block">
+              <div class="spec-block-label">Producer Setup — Publish This Message</div>
+              <div class="kafka-topic">📤 {{PRODUCER_TOPIC}}</div>
+              <div class="code-block">{
+  <span class="key">"orderId"</span>:     <span class="str">"{{testData.orderId}}"</span>,
+  <span class="key">"status"</span>:      <span class="str">"PAYMENT_COMPLETED"</span>,
+  <span class="key">"amount"</span>:      <span class="num">150.00</span>,
+  <span class="key">"timestamp"</span>:   <span class="str">"{{now_iso}}"</span>
+}
+
+<span class="comment">// Headers</span>
+{
+  <span class="key">"correlationId"</span>: <span class="str">"test-{{uuid}}"</span>
+}</div>
+            </div>
+            <div class="spec-block" style="margin-top:16px;">
+              <div class="spec-block-label">Consumer Behavior Verification</div>
+              <div class="assertion-list">
+                <div class="assertion"><span class="a-type">DB check</span><span class="a-path">orders.status</span><span class="a-eq"> = </span><span class="a-val">"CONFIRMED"</span></div>
+                <div class="assertion"><span class="a-type">downstream</span><span class="a-path">order.confirmed</span><span class="a-eq"> published within </span><span class="a-val">5s</span></div>
+              </div>
+              <div style="margin-top:12px;">
+                <div class="spec-block-label">Idempotency Test — Publish Same Message Twice</div>
+                <div class="code-block"><span class="comment">// Step 1: Publish message</span>
+<span class="comment">// Step 2: Wait 2s</span>
+<span class="comment">// Step 3: Publish SAME message again</span>
+<span class="comment">// Step 4: Assert exactly 1 CONFIRMED record</span>
+SELECT COUNT(*) FROM orders
+WHERE id = '{{testData.orderId}}'
+  AND status = 'CONFIRMED';
+<span class="comment">// Expected: 1 (not 2)</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+</body>
+</html>

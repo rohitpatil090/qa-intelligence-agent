@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>R3: Implementation & Bug Findings — {{STORY_ID}}</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-primary: #0a0c10;
+  --bg-secondary: #111420;
+  --bg-card: #161925;
+  --bg-card-hover: #1c2030;
+  --border: #1e2235;
+  --border-bright: #2a2d45;
+  --accent: #4f8ef7;
+  --accent-glow: rgba(79,142,247,0.15);
+  --text-primary: #e2e8f0;
+  --text-secondary: #8892a4;
+  --text-muted: #4a5568;
+  --critical: #ff4757;
+  --critical-bg: rgba(255,71,87,0.08);
+  --critical-border: rgba(255,71,87,0.25);
+  --high: #ff7c3a;
+  --high-bg: rgba(255,124,58,0.08);
+  --medium: #ffd32a;
+  --medium-bg: rgba(255,211,42,0.08);
+  --low: #2ed573;
+  --low-bg: rgba(46,213,115,0.08);
+  --success: #2ed573;
+  --partial: #ffd32a;
+  --missing: #ff4757;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; }
+code, .mono { font-family: 'JetBrains Mono', monospace; }
+
+/* Layout */
+.layout { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
+.sidebar { background: var(--bg-secondary); border-right: 1px solid var(--border); padding: 24px 0; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+.main { padding: 32px; overflow-x: hidden; }
+
+/* Sidebar */
+.sidebar-logo { padding: 0 20px 24px; border-bottom: 1px solid var(--border); }
+.sidebar-logo .agent-name { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+.sidebar-logo .report-num { font-size: 28px; font-weight: 700; color: var(--critical); line-height: 1; }
+.sidebar-logo .report-label { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+.nav-section { padding: 16px 0; border-bottom: 1px solid var(--border); }
+.nav-section-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); padding: 0 20px 8px; font-family: 'JetBrains Mono', monospace; }
+.nav-link { display: flex; align-items: center; gap: 10px; padding: 8px 20px; font-size: 13px; color: var(--text-secondary); text-decoration: none; transition: all 0.15s; }
+.nav-link:hover { background: var(--bg-card); color: var(--text-primary); }
+.nav-link.active { background: var(--accent-glow); color: var(--accent); border-right: 2px solid var(--accent); }
+.nav-link .nav-icon { width: 18px; text-align: center; font-size: 12px; }
+.nav-badge { margin-left: auto; font-size: 10px; font-family: 'JetBrains Mono', monospace; padding: 1px 6px; border-radius: 10px; }
+.nav-badge.critical { background: var(--critical-bg); color: var(--critical); border: 1px solid var(--critical-border); }
+
+/* Header */
+.report-header { margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
+.header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.story-pill { font-family: 'JetBrains Mono', monospace; font-size: 12px; background: var(--accent-glow); color: var(--accent); padding: 4px 12px; border-radius: 4px; border: 1px solid rgba(79,142,247,0.3); }
+.gen-time { font-size: 11px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+.report-title { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+.report-subtitle { color: var(--text-secondary); font-size: 14px; }
+
+/* Alert Banner */
+.alert-banner { background: var(--critical-bg); border: 1px solid var(--critical-border); border-radius: 8px; padding: 16px 20px; margin-bottom: 28px; display: flex; align-items: center; gap: 16px; }
+.alert-icon { font-size: 24px; }
+.alert-text .alert-title { font-weight: 700; color: var(--critical); font-size: 15px; }
+.alert-text .alert-sub { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+.alert-stats { margin-left: auto; display: flex; gap: 20px; }
+.alert-stat { text-align: center; }
+.alert-stat .stat-num { font-size: 22px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+.alert-stat .stat-num.critical { color: var(--critical); }
+.alert-stat .stat-num.high { color: var(--high); }
+.alert-stat .stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); }
+
+/* Stats Grid */
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
+.stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px; }
+.stat-card .s-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; margin-bottom: 8px; }
+.stat-card .s-value { font-size: 32px; font-weight: 700; font-family: 'JetBrains Mono', monospace; line-height: 1; }
+.stat-card .s-sub { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+
+/* Section */
+.section { margin-bottom: 32px; }
+.section-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.section-icon { font-size: 16px; }
+.section-title { font-size: 16px; font-weight: 600; }
+.section-count { font-size: 12px; font-family: 'JetBrains Mono', monospace; background: var(--bg-card); border: 1px solid var(--border); padding: 2px 8px; border-radius: 10px; color: var(--text-secondary); }
+
+/* AC Mapping Table */
+.table-wrap { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 16px; }
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th { background: var(--bg-secondary); padding: 10px 14px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); border-bottom: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; }
+.data-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: top; }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: var(--bg-card-hover); }
+
+/* Status Chips */
+.status { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; font-family: 'JetBrains Mono', monospace; white-space: nowrap; }
+.status-full { background: rgba(46,213,115,0.1); color: #2ed573; border: 1px solid rgba(46,213,115,0.25); }
+.status-partial { background: rgba(255,211,42,0.1); color: #ffd32a; border: 1px solid rgba(255,211,42,0.25); }
+.status-missing { background: rgba(255,71,87,0.1); color: #ff4757; border: 1px solid rgba(255,71,87,0.25); }
+.code-ref { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--accent); background: var(--accent-glow); padding: 2px 6px; border-radius: 3px; }
+.gap-text { font-size: 12px; color: var(--high); margin-top: 4px; }
+
+/* Bug Cards */
+.bug-list { display: flex; flex-direction: column; gap: 16px; }
+.bug-card { border-radius: 8px; overflow: hidden; border: 1px solid; }
+.bug-card.critical { background: var(--critical-bg); border-color: var(--critical-border); }
+.bug-card.high { background: var(--high-bg); border-color: rgba(255,124,58,0.25); }
+.bug-card.medium { background: var(--medium-bg); border-color: rgba(255,211,42,0.25); }
+.bug-card.low { background: var(--low-bg); border-color: rgba(46,213,115,0.25); }
+.bug-card-header { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid inherit; }
+.bug-id { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; color: var(--text-secondary); }
+.badge { padding: 2px 10px; border-radius: 10px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; font-family: 'JetBrains Mono', monospace; }
+.badge-critical { background: rgba(255,71,87,0.15); color: var(--critical); }
+.badge-high { background: rgba(255,124,58,0.15); color: var(--high); }
+.badge-medium { background: rgba(255,211,42,0.15); color: var(--medium); }
+.badge-low { background: rgba(46,213,115,0.15); color: var(--low); }
+.bug-confidence { margin-left: auto; font-size: 11px; color: var(--text-muted); }
+.bug-card-body { padding: 16px; }
+.bug-title { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+.bug-meta { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+.bug-meta-chip { font-size: 11px; font-family: 'JetBrains Mono', monospace; color: var(--text-secondary); display: flex; align-items: center; gap: 4px; }
+.bug-meta-chip span { color: var(--text-muted); }
+.bug-section { margin-bottom: 12px; }
+.bug-section-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 6px; font-family: 'JetBrains Mono', monospace; }
+.steps-list { list-style: none; counter-reset: steps; }
+.steps-list li { counter-increment: steps; padding: 6px 0 6px 24px; position: relative; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+.steps-list li::before { content: counter(steps); position: absolute; left: 0; top: 8px; font-size: 10px; font-family: 'JetBrains Mono', monospace; color: var(--text-muted); font-weight: 700; }
+.expected-actual { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+.expected { background: rgba(46,213,115,0.06); border: 1px solid rgba(46,213,115,0.15); border-radius: 6px; padding: 10px 12px; font-size: 12px; }
+.actual { background: rgba(255,71,87,0.06); border: 1px solid rgba(255,71,87,0.15); border-radius: 6px; padding: 10px 12px; font-size: 12px; }
+.expected .ea-label, .actual .ea-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; font-family: 'JetBrains Mono', monospace; }
+.expected .ea-label { color: var(--success); }
+.actual .ea-label { color: var(--critical); }
+.bug-impact { background: rgba(255,71,87,0.05); border-top: 1px solid var(--border); padding: 10px 16px; font-size: 12px; color: var(--text-secondary); display: flex; align-items: center; gap: 8px; }
+
+/* Flow Diagram */
+.flow-diagram { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 20px; overflow-x: auto; }
+.flow-diagram pre { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-secondary); white-space: pre; line-height: 1.8; }
+
+/* Risk Assessment */
+.risk-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px; }
+.risk-score { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+.risk-score-val { font-size: 48px; font-weight: 700; font-family: 'JetBrains Mono', monospace; line-height: 1; }
+.risk-score-val.high { color: var(--critical); }
+.risk-score-val.medium { color: var(--medium); }
+.risk-score-val.low { color: var(--success); }
+.risk-label { font-size: 12px; color: var(--text-secondary); }
+.recommendation { display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 6px; font-weight: 600; font-size: 14px; }
+.rec-block { background: var(--critical-bg); border: 1px solid var(--critical-border); color: var(--critical); }
+.rec-changes { background: var(--high-bg); border: 1px solid rgba(255,124,58,0.25); color: var(--high); }
+.rec-approve { background: var(--low-bg); border: 1px solid rgba(46,213,115,0.25); color: var(--low); }
+
+details summary { cursor: pointer; padding: 12px 16px; font-weight: 500; font-size: 13px; list-style: none; user-select: none; }
+details summary::-webkit-details-marker { display: none; }
+details[open] summary { border-bottom: 1px solid var(--border); }
+</style>
+</head>
+<body>
+<div class="layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="agent-name">QA Intelligence</div>
+      <div class="report-num">R3</div>
+      <div class="report-label">Bug Findings</div>
+    </div>
+    <nav>
+      <div class="nav-section">
+        <div class="nav-section-label">Reports</div>
+        <a href="R1-code-requirements-mapping.html" class="nav-link"><span class="nav-icon">📋</span> Code Map</a>
+        <a href="R2-requirements-test-mapping.html" class="nav-link"><span class="nav-icon">🔗</span> Req Trace</a>
+        <a href="R3-implementation-bug-findings.html" class="nav-link active"><span class="nav-icon">🐛</span> Bug Findings <span class="nav-badge critical">{{BUG_COUNT}}</span></a>
+        <a href="R4-test-coverage-matrix.html" class="nav-link"><span class="nav-icon">🧪</span> Test Matrix</a>
+        <a href="R5-automation-blueprint.html" class="nav-link"><span class="nav-icon">🤖</span> Automation</a>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-label">Jump To</div>
+        <a href="#impl-overview" class="nav-link"><span class="nav-icon">⚙️</span> Implementation</a>
+        <a href="#ac-mapping" class="nav-link"><span class="nav-icon">📊</span> AC Mapping</a>
+        <a href="#bug-findings" class="nav-link"><span class="nav-icon">🔴</span> Critical Bugs</a>
+        <a href="#risk" class="nav-link"><span class="nav-icon">⚠️</span> Risk Assessment</a>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main">
+    <!-- Header -->
+    <div class="report-header">
+      <div class="header-top">
+        <span class="story-pill mono">{{STORY_ID}}</span>
+        <span class="gen-time">Generated {{TIMESTAMP}} · QA Intelligence Agent v2.0</span>
+      </div>
+      <div class="report-title">{{STORY_TITLE}}</div>
+      <div class="report-subtitle">R3 — Implementation Analysis & Bug Findings Report</div>
+    </div>
+
+    <!-- Alert Banner -->
+    <div class="alert-banner">
+      <div class="alert-icon">⚠️</div>
+      <div class="alert-text">
+        <div class="alert-title">{{BUG_COUNT}} Potential Defects Identified</div>
+        <div class="alert-sub">Requirements not fully satisfied by current implementation. Review before testing.</div>
+      </div>
+      <div class="alert-stats">
+        <div class="alert-stat"><div class="stat-num critical">{{CRITICAL_COUNT}}</div><div class="stat-label">Critical</div></div>
+        <div class="alert-stat"><div class="stat-num high">{{HIGH_COUNT}}</div><div class="stat-label">High</div></div>
+        <div class="alert-stat"><div class="stat-num" style="color:var(--medium)">{{MEDIUM_COUNT}}</div><div class="stat-label">Medium</div></div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="s-label">ACs Fully Covered</div>
+        <div class="s-value" style="color:var(--success)">{{AC_FULL}}/{{AC_TOTAL}}</div>
+        <div class="s-sub">{{AC_PCT}}% coverage</div>
+      </div>
+      <div class="stat-card">
+        <div class="s-label">Partial Coverage</div>
+        <div class="s-value" style="color:var(--medium)">{{AC_PARTIAL}}</div>
+        <div class="s-sub">Requirements incomplete</div>
+      </div>
+      <div class="stat-card">
+        <div class="s-label">Not Implemented</div>
+        <div class="s-value" style="color:var(--critical)">{{AC_MISSING}}</div>
+        <div class="s-sub">ACs not in code</div>
+      </div>
+      <div class="stat-card">
+        <div class="s-label">Code Gaps</div>
+        <div class="s-value" style="color:var(--high)">{{CODE_GAPS}}</div>
+        <div class="s-sub">Missing validations/handlers</div>
+      </div>
+    </div>
+
+    <!-- Implementation Overview -->
+    <div class="section" id="impl-overview">
+      <div class="section-header">
+        <span class="section-icon">⚙️</span>
+        <span class="section-title">Implementation Overview</span>
+      </div>
+      <div class="flow-diagram">
+        <pre>{{IMPLEMENTATION_FLOW_DIAGRAM}}</pre>
+      </div>
+    </div>
+
+    <!-- AC Mapping Table -->
+    <div class="section" id="ac-mapping">
+      <div class="section-header">
+        <span class="section-icon">📊</span>
+        <span class="section-title">Acceptance Criteria vs Implementation</span>
+        <span class="section-count">{{AC_TOTAL}} criteria</span>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>AC ID</th>
+              <th>Requirement</th>
+              <th>Status</th>
+              <th>Code Reference</th>
+              <th>Gap / Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- TEMPLATE ROW — REPEAT PER AC -->
+            <tr>
+              <td class="mono">AC-1</td>
+              <td>{{AC_TEXT}}</td>
+              <td><span class="status status-full">✅ Full</span></td>
+              <td><span class="code-ref">OrderService.java:L23</span></td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td class="mono">AC-3</td>
+              <td>{{AC_TEXT}}</td>
+              <td><span class="status status-partial">⚠️ Partial</span></td>
+              <td><span class="code-ref">OrderService.java:L67</span></td>
+              <td><div class="gap-text">Max price check ($10,000) not implemented</div></td>
+            </tr>
+            <tr>
+              <td class="mono">AC-7</td>
+              <td>{{AC_TEXT}}</td>
+              <td><span class="status status-missing">❌ Missing</span></td>
+              <td>—</td>
+              <td><div class="gap-text">No confirmation email code found in PR</div></td>
+            </tr>
+            <!-- END TEMPLATE -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Bug Findings -->
+    <div class="section" id="bug-findings">
+      <div class="section-header">
+        <span class="section-icon">🐛</span>
+        <span class="section-title">Bug Findings — Scenarios That Break the System</span>
+        <span class="section-count">{{BUG_COUNT}} findings</span>
+      </div>
+      <div class="bug-list">
+
+        <!-- TEMPLATE: CRITICAL BUG CARD — REPEAT PER BUG -->
+        <div class="bug-card critical">
+          <div class="bug-card-header">
+            <span class="bug-id">BUG-001</span>
+            <span class="badge badge-critical">Critical</span>
+            <span class="bug-confidence">Confidence: High</span>
+          </div>
+          <div class="bug-card-body">
+            <div class="bug-title">{{BUG_TITLE}}</div>
+            <div class="bug-meta">
+              <div class="bug-meta-chip"><span>Requirement:</span> AC-3</div>
+              <div class="bug-meta-chip"><span>Code Location:</span> OrderService.java:L67</div>
+              <div class="bug-meta-chip"><span>Pattern:</span> Boundary Value Violation</div>
+            </div>
+            <div class="bug-section">
+              <div class="bug-section-label">Code Gap</div>
+              <div style="font-size:13px; color: var(--text-secondary);">{{CODE_GAP_DESCRIPTION}}</div>
+            </div>
+            <details>
+              <summary>▶ Reproduction Steps</summary>
+              <div style="padding: 12px 0;">
+                <ol class="steps-list">
+                  <li>POST /api/v1/orders with body: <code>{ "customerId": "C001", "price": -0.01 }</code></li>
+                  <li>Observe HTTP response status and body</li>
+                  <li>Check orders table in database</li>
+                </ol>
+                <div class="expected-actual">
+                  <div class="expected">
+                    <div class="ea-label">Expected</div>
+                    HTTP 400 — Price must be between $0.01 and $10,000
+                  </div>
+                  <div class="actual">
+                    <div class="ea-label">Actual (Bug)</div>
+                    HTTP 201 — Order created with invalid price
+                  </div>
+                </div>
+              </div>
+            </details>
+            <div class="bug-impact">💥 Impact: {{IMPACT_DESCRIPTION}}</div>
+          </div>
+        </div>
+        <!-- END TEMPLATE BUG CARD -->
+
+      </div>
+    </div>
+
+    <!-- Risk Assessment -->
+    <div class="section" id="risk">
+      <div class="section-header">
+        <span class="section-icon">⚠️</span>
+        <span class="section-title">Risk Assessment & Recommendation</span>
+      </div>
+      <div class="risk-box">
+        <div class="risk-score">
+          <div class="risk-score-val high">HIGH</div>
+          <div>
+            <div style="font-weight:600; font-size:14px;">Overall Risk Level</div>
+            <div class="risk-label">Based on {{CRITICAL_COUNT}} critical, {{HIGH_COUNT}} high severity findings</div>
+          </div>
+        </div>
+        <!-- Change class to rec-approve / rec-changes / rec-block -->
+        <div class="recommendation rec-block">
+          🚫 RECOMMENDATION: REQUEST CHANGES — Critical defects must be resolved before testing
+        </div>
+        <div style="margin-top: 16px; font-size: 13px; color: var(--text-secondary); line-height: 1.8;">
+          <div style="margin-bottom: 8px;"><strong>Required fixes before QA sign-off:</strong></div>
+          <ul style="list-style: none; padding: 0;">
+            <li>• BUG-001: Price boundary validation — must implement max $10,000 check</li>
+            <li>• BUG-003: Missing confirmation email — AC-7 not implemented</li>
+            <li>• BUG-005: No idempotency protection on order creation</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+</body>
+</html>

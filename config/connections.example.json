@@ -1,0 +1,28 @@
+{
+  "jira": {
+    "baseUrl": "https://YOUR_ORG.atlassian.net",
+    "email": "your@email.com",
+    "apiToken": "YOUR_JIRA_API_TOKEN",
+    "projectKey": "YOUR_PROJECT_KEY"
+  },
+  "confluence": {
+    "baseUrl": "https://YOUR_ORG.atlassian.net/wiki",
+    "apiToken": "YOUR_CONFLUENCE_TOKEN"
+  },
+  "github": {
+    "baseUrl": "https://api.github.com",
+    "token": "YOUR_GITHUB_TOKEN",
+    "owner": "your-org",
+    "repo": "your-repo"
+  },
+  "gitlab": {
+    "baseUrl": "https://gitlab.com/api/v4",
+    "token": "YOUR_GITLAB_TOKEN",
+    "projectId": "YOUR_PROJECT_ID"
+  },
+  "zephyr": {
+    "apiToken": "YOUR_ZEPHYR_SCALE_TOKEN",
+    "projectId": "YOUR_ZEPHYR_PROJECT_ID",
+    "baseUrl": "https://api.zephyrscale.smartbear.com/v2"
+  }
+}

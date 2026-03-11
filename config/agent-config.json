@@ -1,0 +1,27 @@
+{
+  "agent": {
+    "version": "2.0",
+    "name": "QA Intelligence Agent"
+  },
+  "phases": {
+    "skipZephyrScan": false,
+    "skipAutomationAnalysis": false,
+    "parallelScenarioGeneration": true
+  },
+  "bugFinding": {
+    "confidenceThreshold": "medium",
+    "enableSecurityPatterns": true,
+    "enableKafkaPatterns": true,
+    "enableFinancialPatterns": true
+  },
+  "reporting": {
+    "outputDir": "reports/output",
+    "generateAllReports": true,
+    "openInBrowserAfterGeneration": false
+  },
+  "testCaseDesign": {
+    "maxStepsPerTestCase": 10,
+    "requirePreconditions": true,
+    "requireTestData": true
+  }
+}

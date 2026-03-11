@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>R2: Requirements × Test Mapping — {{STORY_ID}}</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg-primary:#09100f;--bg-secondary:#0e1512;--bg-card:#121a18;--border:#192320;--accent:#00b894;--accent-glow:rgba(0,184,148,.1);--text-primary:#e2e8f0;--text-secondary:#6b8a82;--text-muted:#344d47;--critical:#ff4757;--high:#ff7c3a;--medium:#ffd32a;--low:#2ed573;--info:#4f8ef7;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Inter',sans-serif;background:var(--bg-primary);color:var(--text-primary);}
+code,.mono{font-family:'JetBrains Mono',monospace;}
+.layout{display:grid;grid-template-columns:240px 1fr;min-height:100vh;}
+.sidebar{background:var(--bg-secondary);border-right:1px solid var(--border);padding:24px 0;position:sticky;top:0;height:100vh;overflow-y:auto;}
+.main{padding:32px;}
+.sidebar-logo .report-num{font-size:28px;font-weight:700;color:var(--accent);}
+.nav-link{display:flex;align-items:center;gap:10px;padding:8px 20px;font-size:13px;color:var(--text-secondary);text-decoration:none;}
+.nav-link:hover{background:var(--bg-card);color:var(--text-primary);}
+.nav-link.active{background:var(--accent-glow);color:var(--accent);}
+.sidebar-logo{padding:0 20px 24px;border-bottom:1px solid var(--border);}
+.nav-section{padding:16px 0;border-bottom:1px solid var(--border);}
+.nav-section-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);padding:0 20px 8px;}
+.report-header{margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid var(--border);}
+.header-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.story-pill{font-family:'JetBrains Mono',monospace;font-size:12px;background:var(--accent-glow);color:var(--accent);padding:4px 12px;border-radius:4px;border:1px solid rgba(0,184,148,.3);}
+.gen-time{font-size:11px;color:var(--text-muted);}
+.report-title{font-size:22px;font-weight:700;}
+.report-subtitle{color:var(--text-secondary);font-size:13px;margin-top:4px;}
+.section{margin-bottom:28px;}
+.section-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.section-title{font-size:16px;font-weight:600;}
+/* Traceability matrix */
+.trace-table{width:100%;border-collapse:collapse;}
+.trace-table th{background:var(--bg-secondary);padding:10px 14px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-secondary);border-bottom:1px solid var(--border);font-family:'JetBrains Mono',monospace;}
+.trace-table td{padding:12px 14px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:top;}
+.trace-table tr:hover td{background:rgba(255,255,255,.015);}
+.table-wrap{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:20px;}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;text-transform:uppercase;font-family:'JetBrains Mono',monospace;margin:2px;}
+.badge-positive{background:rgba(79,142,247,.12);color:#4f8ef7;}
+.badge-negative{background:rgba(255,71,87,.1);color:#ff8896;}
+.badge-boundary{background:rgba(124,92,191,.12);color:#a78bfa;}
+.badge-edge{background:rgba(255,211,42,.1);color:#ffd32a;}
+.badge-security{background:rgba(255,124,58,.1);color:#ff7c3a;}
+.badge-critical{background:rgba(255,71,87,.12);color:var(--critical);}
+.badge-high{background:rgba(255,124,58,.12);color:var(--high);}
+.badge-medium{background:rgba(255,211,42,.12);color:var(--medium);}
+.tc-ref{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);background:rgba(0,184,148,.08);padding:2px 6px;border-radius:3px;margin:2px;display:inline-block;}
+/* Distribution chart placeholder */
+.dist-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
+.dist-card{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;text-align:center;}
+.dist-card .d-num{font-size:26px;font-weight:700;font-family:'JetBrains Mono',monospace;}
+.dist-card .d-label{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-top:4px;}
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);">QA Intelligence</div>
+      <div class="report-num">R2</div>
+      <div style="font-size:12px;color:var(--text-secondary);">Req Traceability</div>
+    </div>
+    <nav>
+      <div class="nav-section">
+        <div class="nav-section-label">Reports</div>
+        <a href="R1-code-requirements-mapping.html" class="nav-link">📋 Code Map</a>
+        <a href="R2-requirements-test-mapping.html" class="nav-link active">🔗 Req Trace</a>
+        <a href="R3-implementation-bug-findings.html" class="nav-link">🐛 Bug Findings</a>
+        <a href="R4-test-coverage-matrix.html" class="nav-link">🧪 Test Matrix</a>
+        <a href="R5-automation-blueprint.html" class="nav-link">🤖 Automation</a>
+      </div>
+    </nav>
+  </aside>
+  <main class="main">
+    <div class="report-header">
+      <div class="header-top">
+        <span class="story-pill">{{STORY_ID}}</span>
+        <span class="gen-time">{{TIMESTAMP}} · QA Intelligence v2.0</span>
+      </div>
+      <div class="report-title">{{STORY_TITLE}}</div>
+      <div class="report-subtitle">R2 — Requirements × Test Scenario Traceability</div>
+    </div>
+
+    <div class="dist-grid">
+      <div class="dist-card"><div class="d-num" style="color:#4f8ef7">{{POSITIVE_COUNT}}</div><div class="d-label">✅ Positive</div></div>
+      <div class="dist-card"><div class="d-num" style="color:var(--critical)">{{NEGATIVE_COUNT}}</div><div class="d-label">❌ Negative</div></div>
+      <div class="dist-card"><div class="d-num" style="color:#a78bfa">{{BOUNDARY_COUNT}}</div><div class="d-label">⬛ Boundary</div></div>
+      <div class="dist-card"><div class="d-num" style="color:var(--medium)">{{EDGE_COUNT}}</div><div class="d-label">🧩 Edge Case</div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><span>🔗</span><span class="section-title">Traceability Matrix</span></div>
+      <div class="table-wrap">
+        <table class="trace-table">
+          <thead>
+            <tr><th>Req ID</th><th>Acceptance Criterion</th><th>Test Scenarios</th><th>Test Cases</th><th>Coverage</th></tr>
+          </thead>
+          <tbody>
+            <!-- REPEAT PER REQUIREMENT -->
+            <tr>
+              <td class="mono">AC-1</td>
+              <td style="max-width:280px;">{{AC_TEXT}}</td>
+              <td>
+                <span class="badge badge-positive">TS-001 +ve</span>
+                <span class="badge badge-negative">TS-008 -ve</span>
+                <span class="badge badge-boundary">TS-015 BVA</span>
+              </td>
+              <td>
+                <span class="tc-ref">TC-{{STORY_ID}}-001</span>
+                <span class="tc-ref">TC-{{STORY_ID}}-012</span>
+              </td>
+              <td><span style="color:var(--low);font-weight:600;">✅ Full</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header"><span>⚠️</span><span class="section-title">Untested Requirements</span></div>
+      <div class="table-wrap">
+        <table class="trace-table">
+          <thead><tr><th>Req ID</th><th>Requirement</th><th>Reason</th><th>Action Required</th></tr></thead>
+          <tbody>
+            <tr>
+              <td class="mono" style="color:var(--critical)">AC-N</td>
+              <td>{{AC_TEXT}}</td>
+              <td style="font-size:12px;color:var(--text-secondary);">No test case generated — AC not implemented in code</td>
+              <td><span style="font-size:12px;color:var(--high);font-weight:600;">⚠️ Block until implemented</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

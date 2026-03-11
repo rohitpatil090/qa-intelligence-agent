@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>R4: Test Coverage Matrix — {{STORY_ID}}</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-primary: #0a0c10; --bg-secondary: #111420; --bg-card: #161925; --bg-card-hover: #1c2030;
+  --border: #1e2235; --accent: #4f8ef7; --accent-glow: rgba(79,142,247,0.12);
+  --text-primary: #e2e8f0; --text-secondary: #8892a4; --text-muted: #4a5568;
+  --critical: #ff4757; --high: #ff7c3a; --medium: #ffd32a; --low: #2ed573;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--bg-primary); color: var(--text-primary); }
+code, .mono { font-family: 'JetBrains Mono', monospace; }
+.layout { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+.sidebar { background: var(--bg-secondary); border-right: 1px solid var(--border); padding: 24px 0; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+.main { padding: 32px; }
+.sidebar-logo { padding: 0 20px 24px; border-bottom: 1px solid var(--border); }
+.sidebar-logo .report-num { font-size: 28px; font-weight: 700; color: var(--accent); }
+.sidebar-logo .report-label { font-size: 12px; color: var(--text-secondary); }
+.nav-link { display: flex; align-items: center; gap: 10px; padding: 8px 20px; font-size: 13px; color: var(--text-secondary); text-decoration: none; }
+.nav-link:hover { background: var(--bg-card); color: var(--text-primary); }
+.nav-link.active { background: var(--accent-glow); color: var(--accent); }
+.nav-section { padding: 16px 0; border-bottom: 1px solid var(--border); }
+.nav-section-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); padding: 0 20px 8px; }
+.report-header { margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+.header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.story-pill { font-family: 'JetBrains Mono', monospace; font-size: 12px; background: var(--accent-glow); color: var(--accent); padding: 4px 12px; border-radius: 4px; border: 1px solid rgba(79,142,247,0.3); }
+.gen-time { font-size: 11px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+.report-title { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+.report-subtitle { color: var(--text-secondary); font-size: 13px; }
+/* Dashboard */
+.dashboard { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 28px; }
+.dash-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; text-align: center; }
+.dash-card .d-num { font-size: 28px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+.dash-card .d-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-top: 4px; }
+/* Filter bar */
+.filter-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.filter-btn { padding: 6px 14px; border-radius: 20px; font-size: 12px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-secondary); cursor: pointer; font-family: 'Inter', sans-serif; }
+.filter-btn.active { background: var(--accent-glow); border-color: var(--accent); color: var(--accent); }
+/* Table */
+.table-wrap { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 24px; }
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th { background: var(--bg-secondary); padding: 10px 14px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); border-bottom: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; }
+.data-table td { padding: 11px 14px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: middle; }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: var(--bg-card-hover); }
+.badge { display: inline-block; padding: 2px 9px; border-radius: 10px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; font-family: 'JetBrains Mono', monospace; }
+.badge-critical { background: rgba(255,71,87,0.12); color: var(--critical); }
+.badge-high { background: rgba(255,124,58,0.12); color: var(--high); }
+.badge-medium { background: rgba(255,211,42,0.12); color: var(--medium); }
+.badge-low { background: rgba(46,213,115,0.12); color: var(--low); }
+.badge-positive { background: rgba(79,142,247,0.12); color: var(--accent); }
+.badge-negative { background: rgba(255,71,87,0.08); color: #ff8896; }
+.badge-boundary { background: rgba(124,92,191,0.12); color: #a78bfa; }
+.badge-bug { background: rgba(255,71,87,0.15); color: var(--critical); border: 1px solid rgba(255,71,87,0.3); }
+.bug-flag { color: var(--critical); font-size: 14px; }
+.section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.section-title { font-size: 16px; font-weight: 600; }
+.section { margin-bottom: 28px; }
+.tc-id { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--accent); }
+/* Smoke tests highlight */
+.smoke-strip { background: linear-gradient(135deg, rgba(79,142,247,0.06), transparent); border: 1px solid rgba(79,142,247,0.2); border-radius: 8px; padding: 16px; margin-bottom: 24px; }
+.smoke-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); font-family: 'JetBrains Mono', monospace; margin-bottom: 10px; }
+.smoke-list { display: flex; flex-direction: column; gap: 6px; }
+.smoke-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: rgba(79,142,247,0.05); border-radius: 4px; font-size: 13px; }
+.smoke-item .tc-id { min-width: 130px; }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);font-family:'JetBrains Mono',monospace;">QA Intelligence</div>
+      <div class="report-num">R4</div>
+      <div class="report-label">Test Coverage Matrix</div>
+    </div>
+    <nav>
+      <div class="nav-section">
+        <div class="nav-section-label">Reports</div>
+        <a href="R1-code-requirements-mapping.html" class="nav-link">📋 Code Map</a>
+        <a href="R2-requirements-test-mapping.html" class="nav-link">🔗 Req Trace</a>
+        <a href="R3-implementation-bug-findings.html" class="nav-link">🐛 Bug Findings</a>
+        <a href="R4-test-coverage-matrix.html" class="nav-link active">🧪 Test Matrix</a>
+        <a href="R5-automation-blueprint.html" class="nav-link">🤖 Automation</a>
+      </div>
+    </nav>
+  </aside>
+  <main class="main">
+    <div class="report-header">
+      <div class="header-top">
+        <span class="story-pill">{{STORY_ID}}</span>
+        <span class="gen-time">{{TIMESTAMP}} · QA Intelligence v2.0</span>
+      </div>
+      <div class="report-title">{{STORY_TITLE}}</div>
+      <div class="report-subtitle">R4 — Test Coverage Matrix & Execution Plan</div>
+    </div>
+
+    <!-- Dashboard -->
+    <div class="dashboard">
+      <div class="dash-card"><div class="d-num" style="color:var(--accent)">{{TOTAL_TC}}</div><div class="d-label">Total Test Cases</div></div>
+      <div class="dash-card"><div class="d-num" style="color:var(--critical)">{{CRITICAL_TC}}</div><div class="d-label">Critical</div></div>
+      <div class="dash-card"><div class="d-num" style="color:var(--high)">{{HIGH_TC}}</div><div class="d-label">High Priority</div></div>
+      <div class="dash-card"><div class="d-num" style="color:var(--medium)">{{BUG_POTENTIAL_TC}}</div><div class="d-label">Bug-Potential</div></div>
+      <div class="dash-card"><div class="d-num" style="color:var(--low)">{{AUTOMATE_TC}}</div><div class="d-label">Automatable</div></div>
+    </div>
+
+    <!-- Smoke Tests -->
+    <div class="section">
+      <div class="section-header"><span>🔥</span><span class="section-title">Smoke Test Suite — Run First</span></div>
+      <div class="smoke-strip">
+        <div class="smoke-label">Must-Pass Before Full Testing</div>
+        <div class="smoke-list">
+          <!-- REPEAT PER SMOKE TEST -->
+          <div class="smoke-item">
+            <span class="tc-id">TC-{{STORY_ID}}-001</span>
+            <span class="badge badge-critical">Critical</span>
+            <span>{{SMOKE_TC_TITLE}}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bug-Potential Test Cases -->
+    <div class="section">
+      <div class="section-header"><span>🎯</span><span class="section-title">Bug-Potential Test Cases</span></div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr><th>TC ID</th><th>Title</th><th>Priority</th><th>Category</th><th>Bug Scenario</th></tr>
+          </thead>
+          <tbody>
+            <!-- REPEAT PER BUG-POTENTIAL TC -->
+            <tr>
+              <td class="tc-id">TC-{{STORY_ID}}-012</td>
+              <td>{{TC_TITLE}}</td>
+              <td><span class="badge badge-critical">Critical</span></td>
+              <td><span class="badge badge-negative">Negative</span></td>
+              <td style="font-size:12px;color:var(--critical)">🐛 {{BUG_SCENARIO_DESC}}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Full Test Case Matrix -->
+    <div class="section">
+      <div class="section-header"><span>📋</span><span class="section-title">Full Test Case Matrix</span></div>
+      <div class="filter-bar">
+        <button class="filter-btn active" onclick="filterTable('all')">All ({{TOTAL_TC}})</button>
+        <button class="filter-btn" onclick="filterTable('critical')">🔴 Critical</button>
+        <button class="filter-btn" onclick="filterTable('positive')">✅ Positive</button>
+        <button class="filter-btn" onclick="filterTable('negative')">❌ Negative</button>
+        <button class="filter-btn" onclick="filterTable('boundary')">⬛ Boundary</button>
+        <button class="filter-btn" onclick="filterTable('security')">🔐 Security</button>
+        <button class="filter-btn" onclick="filterTable('bug')">🐛 Bug-Potential</button>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table" id="mainTable">
+          <thead>
+            <tr>
+              <th>TC ID</th><th>Title</th><th>Priority</th><th>Category</th><th>Type</th><th>Suite</th><th>Bug?</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- REPEAT PER TEST CASE -->
+            <tr data-priority="critical" data-type="positive" data-bug="false">
+              <td class="tc-id">TC-{{STORY_ID}}-001</td>
+              <td>{{TC_TITLE}}</td>
+              <td><span class="badge badge-critical">Critical</span></td>
+              <td><span class="badge badge-positive">Positive</span></td>
+              <td>Happy Path</td>
+              <td>Smoke</td>
+              <td>—</td>
+            </tr>
+            <tr data-priority="critical" data-type="negative" data-bug="true">
+              <td class="tc-id">TC-{{STORY_ID}}-012</td>
+              <td>{{TC_TITLE}}</td>
+              <td><span class="badge badge-critical">Critical</span></td>
+              <td><span class="badge badge-negative">Negative</span></td>
+              <td>Boundary</td>
+              <td>Bug-Potential</td>
+              <td class="bug-flag">🐛</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+<script>
+function filterTable(filter) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  const rows = document.querySelectorAll('#mainTable tbody tr');
+  rows.forEach(row => {
+    if (filter === 'all') { row.style.display = ''; return; }
+    if (filter === 'bug') { row.style.display = row.dataset.bug === 'true' ? '' : 'none'; return; }
+    const matchPriority = row.dataset.priority === filter;
+    const matchType = row.dataset.type === filter;
+    row.style.display = matchPriority || matchType ? '' : 'none';
+  });
+}
+</script>
+</body>
+</html>
